@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
 import { supabaseAdmin } from "./lib/supabase/server";
-import { NextRequest } from "next/server";
 
 // This function will be called after successful authentication
 async function syncUserToSupabase(userId: string | null) {

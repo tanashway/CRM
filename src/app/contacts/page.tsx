@@ -36,7 +36,7 @@ import {
 } from 'lucide-react';
 import { Contact, getContacts, updateContact, deleteContact } from '@/lib/contacts-service';
 import { useRouter } from 'next/navigation';
-import { toast } from "@/components/ui/use-toast";
+import { useToast } from "@/components/ui/use-toast";
 
 export default function ContactsPage() {
   const router = useRouter();

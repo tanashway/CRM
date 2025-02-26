@@ -1,10 +1,9 @@
 'use client';
 
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Loader2, CheckCircle, AlertCircle } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
 
 interface SetupResponse {
@@ -17,10 +16,8 @@ interface SetupResponse {
 }
 
 export default function SetupPage() {
-  const router = useRouter();
   const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
   const [result, setResult] = useState<SetupResponse | null>(null);
-  const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
 
   const initializeDatabase = async () => {

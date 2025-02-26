@@ -20,178 +20,149 @@ export async function GET(req: NextRequest) {
     // Get query parameters
     const url = new URL(req.url);
     const period = url.searchParams.get('period') || 'month';
+    const startDate = url.searchParams.get('start_date') 
+      ? new Date(url.searchParams.get('start_date')!) 
+      : new Date(new Date().setDate(new Date().getDate() - 30));
+    const endDate = url.searchParams.get('end_date')
+      ? new Date(url.searchParams.get('end_date')!)
+      : new Date();
     
-    // Calculate date range based on period
-    const now = new Date();
-    let startDate: Date;
-    
-    switch (period) {
-      case 'week':
-        startDate = new Date(now);
-        startDate.setDate(now.getDate() - 7);
-        break;
-      case 'month':
-        startDate = new Date(now);
-        startDate.setMonth(now.getMonth() - 1);
-        break;
-      case 'quarter':
-        startDate = new Date(now);
-        startDate.setMonth(now.getMonth() - 3);
-        break;
-      case 'year':
-        startDate = new Date(now);
-        startDate.setFullYear(now.getFullYear() - 1);
-        break;
-      default:
-        startDate = new Date(now);
-        startDate.setMonth(now.getMonth() - 1);
-    }
-    
-    const startDateStr = startDate.toISOString().split('T')[0];
-    const endDateStr = now.toISOString().split('T')[0];
-    
-    // Get revenue data (paid invoices)
-    const { data: revenueData, error: revenueError } = await supabaseAdmin
+    // Get invoices for the period
+    const { data: invoices, error: invoicesError } = await supabaseAdmin
       .from('invoices')
-      .select('issue_date, total_amount')
+      .select('id, total_amount, status, issue_date, due_date, created_at')
       .eq('user_id', userData.id)
-      .eq('status', 'paid')
-      .gte('issue_date', startDateStr)
-      .lte('issue_date', endDateStr)
-      .order('issue_date', { ascending: true });
+      .gte('created_at', startDate.toISOString())
+      .lte('created_at', endDate.toISOString());
     
-    if (revenueError) {
-      console.error('Error fetching revenue data:', revenueError);
+    if (invoicesError) {
+      console.error('Error fetching invoices:', invoicesError);
       return NextResponse.json({ error: 'Failed to fetch financial data' }, { status: 500 });
     }
     
-    // Get expense data (transactions with type 'expense')
-    const { data: expenseData, error: expenseError } = await supabaseAdmin
-      .from('transactions')
-      .select('date, amount')
-      .eq('user_id', userData.id)
-      .eq('type', 'expense')
-      .gte('date', startDateStr)
-      .lte('date', endDateStr)
-      .order('date', { ascending: true });
+    // Calculate revenue by status
+    const totalRevenue = invoices
+      .filter(invoice => invoice.status === 'paid')
+      .reduce((sum, invoice) => sum + (invoice.total_amount || 0), 0);
     
-    if (expenseError) {
-      console.error('Error fetching expense data:', expenseError);
-      return NextResponse.json({ error: 'Failed to fetch financial data' }, { status: 500 });
-    }
+    const pendingRevenue = invoices
+      .filter(invoice => ['sent', 'draft'].includes(invoice.status))
+      .reduce((sum, invoice) => sum + (invoice.total_amount || 0), 0);
     
-    // Group data by date for chart
-    const revenueByDate = groupFinancialDataByDate(revenueData, 'issue_date', 'total_amount');
-    const expensesByDate = groupFinancialDataByDate(expenseData, 'date', 'amount');
+    const overdueRevenue = invoices
+      .filter(invoice => invoice.status === 'overdue')
+      .reduce((sum, invoice) => sum + (invoice.total_amount || 0), 0);
     
-    // Get all dates in range
-    const dateRange = getDateRange(startDate, now);
+    // Group data by date
+    const revenueByDate = groupFinancialDataByDate(
+      invoices.filter(invoice => invoice.status === 'paid'),
+      'created_at',
+      'total_amount'
+    );
     
-    // Format data for chart
+    const pendingByDate = groupFinancialDataByDate(
+      invoices.filter(invoice => ['sent', 'draft'].includes(invoice.status)),
+      'created_at',
+      'total_amount'
+    );
+    
+    const overdueByDate = groupFinancialDataByDate(
+      invoices.filter(invoice => invoice.status === 'overdue'),
+      'created_at',
+      'total_amount'
+    );
+    
+    // Get all dates in the range
+    const dateRange = getDateRange(startDate, endDate);
+    
+    // Format data for charts
     const chartData = dateRange.map(date => {
       const dateStr = date.toISOString().split('T')[0];
       return {
         date: dateStr,
         revenue: revenueByDate[dateStr] || 0,
-        expenses: expensesByDate[dateStr] || 0,
+        pending: pendingByDate[dateStr] || 0,
+        overdue: overdueByDate[dateStr] || 0,
       };
     });
     
-    // Calculate totals
-    const totalRevenue = revenueData.reduce((sum, item) => sum + (item.total_amount || 0), 0);
-    const totalExpenses = expenseData.reduce((sum, item) => sum + (item.amount || 0), 0);
-    const netProfit = totalRevenue - totalExpenses;
+    // Get monthly revenue for the last 12 months
+    const today = new Date();
+    const twelveMonthsAgo = new Date(today.getFullYear(), today.getMonth() - 11, 1);
     
-    // Get top revenue sources (by contact)
-    const { data: topSources, error: sourcesError } = await supabaseAdmin
+    const { data: monthlyInvoices, error: monthlyError } = await supabaseAdmin
       .from('invoices')
-      .select(`
-        contact_id,
-        contacts (
-          id,
-          first_name,
-          last_name,
-          company
-        ),
-        total_amount
-      `)
+      .select('total_amount, status, created_at')
       .eq('user_id', userData.id)
       .eq('status', 'paid')
-      .gte('issue_date', startDateStr)
-      .lte('issue_date', endDateStr);
+      .gte('created_at', twelveMonthsAgo.toISOString());
     
-    if (sourcesError) {
-      console.error('Error fetching revenue sources:', sourcesError);
+    if (monthlyError) {
+      console.error('Error fetching monthly invoices:', monthlyError);
       return NextResponse.json({ error: 'Failed to fetch financial data' }, { status: 500 });
     }
     
-    // Group by contact and sum amounts
-    const sourcesByContact: Record<string, { contact: any; total: number }> = {};
+    // Group by month
+    const monthlyRevenueData: Record<string, number> = {};
     
-    topSources.forEach(invoice => {
-      const contactId = invoice.contact_id;
-      if (!sourcesByContact[contactId]) {
-        sourcesByContact[contactId] = {
-          contact: invoice.contacts,
-          total: 0,
-        };
+    monthlyInvoices.forEach(invoice => {
+      const date = new Date(invoice.created_at);
+      const monthYear = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+      
+      if (!monthlyRevenueData[monthYear]) {
+        monthlyRevenueData[monthYear] = 0;
       }
-      sourcesByContact[contactId].total += (invoice.total_amount || 0);
+      
+      monthlyRevenueData[monthYear] += invoice.total_amount || 0;
     });
     
-    // Convert to array and sort by total
-    const revenueSources = Object.values(sourcesByContact)
-      .sort((a, b) => b.total - a.total)
-      .slice(0, 5)
-      .map(item => ({
-        id: item.contact.id,
-        name: item.contact.company || `${item.contact.first_name} ${item.contact.last_name}`,
-        amount: item.total,
-        percentage: totalRevenue > 0 ? (item.total / totalRevenue) * 100 : 0,
+    // Format monthly data
+    const monthlyRevenue = Object.keys(monthlyRevenueData)
+      .sort()
+      .map(monthYear => ({
+        month: monthYear,
+        revenue: monthlyRevenueData[monthYear],
       }));
     
     return NextResponse.json({
+      total_revenue: totalRevenue,
+      pending_revenue: pendingRevenue,
+      overdue_revenue: overdueRevenue,
       chart_data: chartData,
-      summary: {
-        total_revenue: totalRevenue,
-        total_expenses: totalExpenses,
-        net_profit: netProfit,
-        profit_margin: totalRevenue > 0 ? (netProfit / totalRevenue) * 100 : 0,
-      },
-      revenue_sources: revenueSources,
+      monthly_revenue: monthlyRevenue,
     });
   } catch (error) {
-    console.error('Error in financial data GET route:', error);
+    console.error('Error in financial GET route:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
 
 // Helper function to group financial data by date
 function groupFinancialDataByDate(
-  data: any[],
+  data: Array<{ [key: string]: any }>,
   dateField: string,
   amountField: string
 ): Record<string, number> {
   const result: Record<string, number> = {};
   
   data.forEach(item => {
-    const date = item[dateField];
-    const amount = item[amountField] || 0;
+    const date = new Date(item[dateField]);
+    const dateStr = date.toISOString().split('T')[0];
     
-    if (!result[date]) {
-      result[date] = 0;
+    if (!result[dateStr]) {
+      result[dateStr] = 0;
     }
     
-    result[date] += amount;
+    result[dateStr] += item[amountField] || 0;
   });
   
   return result;
 }
 
-// Helper function to get array of dates in range
+// Helper function to get all dates in a range
 function getDateRange(startDate: Date, endDate: Date): Date[] {
   const dates: Date[] = [];
-  const currentDate = new Date(startDate);
+  let currentDate = new Date(startDate);
   
   while (currentDate <= endDate) {
     dates.push(new Date(currentDate));
@@ -201,8 +172,8 @@ function getDateRange(startDate: Date, endDate: Date): Date[] {
   return dates;
 }
 
-// Replace any with proper types
-interface MonthlyRevenue {
+// Define proper types for the monthly revenue data
+interface MonthlyRevenueData {
   month: string;
   revenue: number;
 } 

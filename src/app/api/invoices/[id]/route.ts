@@ -2,8 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getCurrentUser, checkUserAccess } from '@/lib/auth';
 import { supabaseAdmin } from '@/lib/supabase/server';
 
-// Define proper types instead of using 'any'
-interface InvoiceItem {
+// Define proper types for invoice items
+interface InvoiceItemType {
   id: string;
   invoice_id: string;
   description: string;
@@ -24,13 +24,14 @@ export async function GET(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
     
+    // Check if user has access to this invoice
     const hasAccess = await checkUserAccess('invoices', params.id);
     
     if (!hasAccess) {
       return NextResponse.json({ error: 'Not found' }, { status: 404 });
     }
     
-    // Get invoice with contact and items
+    // Get invoice with contact info
     const { data: invoice, error: invoiceError } = await supabaseAdmin
       .from('invoices')
       .select(`
@@ -40,8 +41,8 @@ export async function GET(
           first_name,
           last_name,
           email,
-          phone,
-          company
+          company,
+          phone
         )
       `)
       .eq('id', params.id)
@@ -64,20 +65,17 @@ export async function GET(
       return NextResponse.json({ error: 'Failed to fetch invoice items' }, { status: 500 });
     }
     
-    // Combine invoice and items
-    const result = {
+    return NextResponse.json({
       ...invoice,
       items: items || [],
-    };
-    
-    return NextResponse.json(result);
+    });
   } catch (error) {
     console.error('Error in invoice GET route:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
 
-// PUT /api/invoices/[id] - Update a specific invoice
+// PUT /api/invoices/[id] - Update an invoice
 export async function PUT(
   req: NextRequest,
   { params }: { params: { id: string } }
@@ -89,6 +87,7 @@ export async function PUT(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
     
+    // Check if user has access to this invoice
     const hasAccess = await checkUserAccess('invoices', params.id);
     
     if (!hasAccess) {
@@ -126,9 +125,9 @@ export async function PUT(
       return NextResponse.json({ error: 'Failed to update invoice' }, { status: 500 });
     }
     
-    // Update invoice items if provided
+    // Handle invoice items
     if (body.items && Array.isArray(body.items)) {
-      // First delete existing items
+      // Delete existing items
       const { error: deleteError } = await supabaseAdmin
         .from('invoice_items')
         .delete()
@@ -139,17 +138,22 @@ export async function PUT(
         return NextResponse.json({ error: 'Failed to update invoice items' }, { status: 500 });
       }
       
-      // Then add new items
+      // Add new items
       if (body.items.length > 0) {
-        const invoiceItems = body.items.map((item: any) => ({
-          invoice_id: params.id,
-          description: item.description || '',
-          quantity: item.quantity || 1,
-          unit_price: item.unit_price || 0,
-          total: (item.quantity || 1) * (item.unit_price || 0),
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-        }));
+        const invoiceItems = body.items.map((item: Record<string, unknown>) => {
+          const quantity = typeof item.quantity === 'number' ? item.quantity : 1;
+          const unitPrice = typeof item.unit_price === 'number' ? item.unit_price : 0;
+          
+          return {
+            invoice_id: params.id,
+            description: item.description || '',
+            quantity: quantity,
+            unit_price: unitPrice,
+            total: quantity * unitPrice,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+          };
+        });
         
         const { error: insertError } = await supabaseAdmin
           .from('invoice_items')
@@ -169,7 +173,7 @@ export async function PUT(
   }
 }
 
-// DELETE /api/invoices/[id] - Delete a specific invoice
+// DELETE /api/invoices/[id] - Delete an invoice
 export async function DELETE(
   req: NextRequest,
   { params }: { params: { id: string } }
@@ -181,24 +185,25 @@ export async function DELETE(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
     
+    // Check if user has access to this invoice
     const hasAccess = await checkUserAccess('invoices', params.id);
     
     if (!hasAccess) {
       return NextResponse.json({ error: 'Not found' }, { status: 404 });
     }
     
-    // Delete invoice (cascade will delete items)
-    const { error } = await supabaseAdmin
+    // Delete invoice (items will be deleted via cascade)
+    const { error: deleteError } = await supabaseAdmin
       .from('invoices')
       .delete()
       .eq('id', params.id);
     
-    if (error) {
-      console.error('Error deleting invoice:', error);
+    if (deleteError) {
+      console.error('Error deleting invoice:', deleteError);
       return NextResponse.json({ error: 'Failed to delete invoice' }, { status: 500 });
     }
     
-    return new NextResponse(null, { status: 204 });
+    return NextResponse.json({ message: 'Invoice deleted successfully' });
   } catch (error) {
     console.error('Error in invoice DELETE route:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });

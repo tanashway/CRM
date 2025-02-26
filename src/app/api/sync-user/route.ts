@@ -3,19 +3,14 @@ import { getCurrentUser } from '@/lib/auth';
 import { supabaseAdmin } from '@/lib/supabase/server';
 import { clerkClient } from '@clerk/nextjs/server';
 
-// Define proper types
-interface ClerkUser {
+// Define email address type
+interface EmailAddress {
   id: string;
-  firstName?: string;
-  lastName?: string;
-  emailAddresses: Array<{
-    emailAddress: string;
-    id: string;
-  }>;
+  emailAddress: string;
 }
 
 // POST /api/sync-user - Manually sync the current user to Supabase
-export async function POST(req: NextRequest) {
+export async function POST() {
   try {
     const clerkId = await getCurrentUser();
     
@@ -32,7 +27,7 @@ export async function POST(req: NextRequest) {
     
     // Get the primary email
     const primaryEmail = user.emailAddresses.find(
-      (email: any) => email.id === user.primaryEmailAddressId
+      (email: EmailAddress) => email.id === user.primaryEmailAddressId
     )?.emailAddress;
     
     // Check if user already exists in Supabase

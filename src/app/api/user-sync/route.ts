@@ -5,15 +5,10 @@ import { Webhook } from 'svix';
 import { headers } from 'next/headers';
 import { WebhookEvent } from '@clerk/nextjs/server';
 
-// Define proper types
-interface ClerkUser {
+// Define email address type
+interface EmailAddress {
   id: string;
-  firstName?: string;
-  lastName?: string;
-  emailAddresses: Array<{
-    emailAddress: string;
-    id: string;
-  }>;
+  emailAddress: string;
 }
 
 // This endpoint handles Clerk webhooks to sync user data to Supabase
@@ -108,7 +103,7 @@ export async function POST(req: NextRequest) {
       }
       
       // Get the primary email
-      const primaryEmail = user.emailAddresses.find((email: any) => email.id === user.primaryEmailAddressId)?.emailAddress;
+      const primaryEmail = user.emailAddresses.find((email: EmailAddress) => email.id === user.primaryEmailAddressId)?.emailAddress;
       
       // Sync user to Supabase
       return await syncUserToSupabase(user.id, primaryEmail, user.firstName, user.lastName);

@@ -1,7 +1,5 @@
-import { clerkClient } from '@clerk/nextjs/server';
 import { auth } from '@clerk/nextjs/server';
 import { supabaseAdmin } from '@/lib/supabase/server';
-import { NextRequest } from 'next/server';
 
 // Get the current user from Clerk
 export async function getCurrentUser() {

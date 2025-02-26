@@ -1,6 +1,5 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase/server';
-import { getCurrentUser } from '@/lib/auth';
 import { createClient } from '@supabase/supabase-js';
 
 // GET /api/fix-db - Fix database tables
@@ -10,12 +9,6 @@ export async function GET() {
     if (process.env.NODE_ENV !== 'development') {
       return NextResponse.json({ error: 'Not allowed in production' }, { status: 403 });
     }
-
-    // Create users table if it doesn't exist
-    const { data: usersExists } = await supabaseAdmin
-      .from('users')
-      .select('id')
-      .limit(1);
 
     // Create a Supabase client with the service role key
     const supabase = createClient(
@@ -55,8 +48,8 @@ export async function GET() {
         `
       });
       console.log('Users table created or already exists');
-    } catch (error) {
-      console.error('Error creating users table:', error);
+    } catch (dbError) {
+      console.error('Error creating users table:', dbError);
       
       // Alternative approach if RPC fails
       const { error: directError } = await supabase.from('_manual_query').select('*').eq('query', `
@@ -101,8 +94,8 @@ export async function GET() {
         `
       });
       console.log('Contacts table created or already exists');
-    } catch (error) {
-      console.error('Error creating contacts table:', error);
+    } catch (dbError) {
+      console.error('Error creating contacts table:', dbError);
     }
 
     // Create a test user if none exists
@@ -126,8 +119,8 @@ export async function GET() {
           console.log('Test user created');
         }
       }
-    } catch (error) {
-      console.error('Error checking for existing users:', error);
+    } catch (dbError) {
+      console.error('Error checking for existing users:', dbError);
     }
 
     return NextResponse.json({ 
