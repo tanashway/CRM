@@ -3,6 +3,17 @@ import { getCurrentUser } from '@/lib/auth';
 import { supabaseAdmin } from '@/lib/supabase/server';
 import { clerkClient } from '@clerk/nextjs/server';
 
+// Define proper types
+interface ClerkUser {
+  id: string;
+  firstName?: string;
+  lastName?: string;
+  emailAddresses: Array<{
+    emailAddress: string;
+    id: string;
+  }>;
+}
+
 // POST /api/sync-user - Manually sync the current user to Supabase
 export async function POST(req: NextRequest) {
   try {

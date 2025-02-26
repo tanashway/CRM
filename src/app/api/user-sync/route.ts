@@ -5,6 +5,17 @@ import { Webhook } from 'svix';
 import { headers } from 'next/headers';
 import { WebhookEvent } from '@clerk/nextjs/server';
 
+// Define proper types
+interface ClerkUser {
+  id: string;
+  firstName?: string;
+  lastName?: string;
+  emailAddresses: Array<{
+    emailAddress: string;
+    id: string;
+  }>;
+}
+
 // This endpoint handles Clerk webhooks to sync user data to Supabase
 export async function POST(req: NextRequest) {
   // Verify the webhook signature

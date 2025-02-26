@@ -32,11 +32,11 @@ import {
   MoreHorizontal, 
   Plus, 
   Upload, 
-  Users,
   Loader2
 } from 'lucide-react';
 import { Contact, getContacts, updateContact, deleteContact } from '@/lib/contacts-service';
 import { useRouter } from 'next/navigation';
+import { toast } from "@/components/ui/use-toast";
 
 export default function ContactsPage() {
   const router = useRouter();

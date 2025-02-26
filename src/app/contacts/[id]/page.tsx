@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { Loader2, Mail, Phone, Building, Briefcase, Calendar, Edit, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { getContact, deleteContact } from "@/lib/contacts-service";
+import { getContact, deleteContact, Contact } from "@/lib/contacts-service";
 import { toast } from "@/components/ui/use-toast";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 
@@ -18,7 +18,7 @@ interface ContactDetailPageProps {
 export default function ContactDetailPage(props: ContactDetailPageProps) {
   const router = useRouter();
   const contactId = props.params.id;
-  const [contact, setContact] = useState<any>(null);
+  const [contact, setContact] = useState<Contact | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);

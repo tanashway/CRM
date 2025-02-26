@@ -1,15 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase/server';
 
-// This route initializes the database tables
-// Only use this in development
-export async function GET(req: NextRequest) {
-  // Only allow in development
-  if (process.env.NODE_ENV !== 'development') {
-    return NextResponse.json({ error: 'Not allowed in production' }, { status: 403 });
-  }
-
+// GET /api/init-db - Initialize database tables
+export async function GET() {
   try {
+    // Only allow in development
+    if (process.env.NODE_ENV !== 'development') {
+      return NextResponse.json({ error: 'Not allowed in production' }, { status: 403 });
+    }
+
     // Enable UUID extension
     const { error: extensionError } = await supabaseAdmin.rpc('exec_sql', {
       sql_string: `CREATE EXTENSION IF NOT EXISTS "uuid-ossp";`

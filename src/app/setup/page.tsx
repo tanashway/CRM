@@ -1,19 +1,31 @@
 'use client';
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Loader2 } from 'lucide-react';
+import { Loader2, CheckCircle, AlertCircle } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
 
+interface SetupResponse {
+  success: boolean;
+  message: string;
+  details?: {
+    usersCreated?: boolean;
+    contactsCreated?: boolean;
+  };
+}
+
 export default function SetupPage() {
-  const [isLoading, setIsLoading] = useState(false);
-  const [result, setResult] = useState<any>(null);
+  const router = useRouter();
+  const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
+  const [result, setResult] = useState<SetupResponse | null>(null);
+  const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
 
   const initializeDatabase = async () => {
     try {
-      setIsLoading(true);
+      setStatus("loading");
       setResult(null);
       
       const response = await fetch('/api/init-db');
@@ -42,7 +54,7 @@ export default function SetupPage() {
         variant: 'destructive',
       });
     } finally {
-      setIsLoading(false);
+      setStatus("idle");
     }
   };
 
@@ -73,10 +85,10 @@ export default function SetupPage() {
         <CardFooter>
           <Button 
             onClick={initializeDatabase} 
-            disabled={isLoading}
+            disabled={status === "loading"}
             className="w-full"
           >
-            {isLoading ? (
+            {status === "loading" ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                 Initializing...

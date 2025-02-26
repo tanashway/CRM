@@ -2,6 +2,16 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getCurrentUser, checkUserAccess } from '@/lib/auth';
 import { supabaseAdmin } from '@/lib/supabase/server';
 
+// Define proper types instead of using 'any'
+interface InvoiceItem {
+  id: string;
+  invoice_id: string;
+  description: string;
+  quantity: number;
+  unit_price: number;
+  amount: number;
+}
+
 // GET /api/invoices/[id] - Get a specific invoice with items
 export async function GET(
   req: NextRequest,

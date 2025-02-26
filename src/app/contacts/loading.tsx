@@ -8,6 +8,7 @@ import {
   TableHeader, 
   TableRow 
 } from '@/components/ui/table';
+import { Loader2 } from "lucide-react";
 
 export default function ContactsLoading() {
   return (

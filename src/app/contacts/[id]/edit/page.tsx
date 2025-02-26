@@ -6,6 +6,7 @@ import { Loader2 } from "lucide-react";
 import { ContactForm } from "@/components/contacts/contact-form";
 import { getContact } from "@/lib/contacts-service";
 import { toast } from "@/components/ui/use-toast";
+import { Contact } from "@/lib/contacts-service";
 
 interface EditContactPageProps {
   params: {
@@ -15,7 +16,7 @@ interface EditContactPageProps {
 
 export default function EditContactPage(props: EditContactPageProps) {
   const router = useRouter();
-  const [contact, setContact] = useState<any>(null);
+  const [contact, setContact] = useState<Contact | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   

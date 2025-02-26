@@ -8,7 +8,7 @@ async function syncUserToSupabase(userId: string | null) {
   
   try {
     // Check if user exists in Supabase
-    const { data, error } = await supabaseAdmin
+    const { error } = await supabaseAdmin
       .from('users')
       .select('id')
       .eq('clerk_id', userId)
@@ -34,7 +34,7 @@ async function syncUserToSupabase(userId: string | null) {
 import { auth } from "@clerk/nextjs/server";
 
 // This middleware handles authentication and user syncing
-export default async function middleware(request: NextRequest) {
+export default async function middleware() {
   // Get the user ID from the request
   const { userId } = await auth();
   

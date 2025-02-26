@@ -1,9 +1,22 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { supabaseAdmin } from '@/lib/supabase/server';
+import { getCurrentUser } from '@/lib/auth';
 import { createClient } from '@supabase/supabase-js';
 
-// This route creates the database tables directly
-export async function GET(req: NextRequest) {
+// GET /api/fix-db - Fix database tables
+export async function GET() {
   try {
+    // Only allow in development
+    if (process.env.NODE_ENV !== 'development') {
+      return NextResponse.json({ error: 'Not allowed in production' }, { status: 403 });
+    }
+
+    // Create users table if it doesn't exist
+    const { data: usersExists } = await supabaseAdmin
+      .from('users')
+      .select('id')
+      .limit(1);
+
     // Create a Supabase client with the service role key
     const supabase = createClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,

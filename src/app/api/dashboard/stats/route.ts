@@ -3,7 +3,7 @@ import { getCurrentUser, getCurrentUserData } from '@/lib/auth';
 import { supabaseAdmin } from '@/lib/supabase/server';
 
 // GET /api/dashboard/stats - Get dashboard statistics
-export async function GET(req: NextRequest) {
+export async function GET() {
   try {
     const clerkId = await getCurrentUser();
     

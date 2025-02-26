@@ -191,7 +191,7 @@ function groupFinancialDataByDate(
 // Helper function to get array of dates in range
 function getDateRange(startDate: Date, endDate: Date): Date[] {
   const dates: Date[] = [];
-  let currentDate = new Date(startDate);
+  const currentDate = new Date(startDate);
   
   while (currentDate <= endDate) {
     dates.push(new Date(currentDate));
@@ -199,4 +199,10 @@ function getDateRange(startDate: Date, endDate: Date): Date[] {
   }
   
   return dates;
+}
+
+// Replace any with proper types
+interface MonthlyRevenue {
+  month: string;
+  revenue: number;
 } 

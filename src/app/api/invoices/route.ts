@@ -2,6 +2,15 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getCurrentUser, getCurrentUserData } from '@/lib/auth';
 import { supabaseAdmin } from '@/lib/supabase/server';
 
+// Define proper types instead of using 'any'
+interface InvoiceItem {
+  id?: string;
+  description: string;
+  quantity: number;
+  unit_price: number;
+  amount: number;
+}
+
 // GET /api/invoices - Get all invoices for the current user
 export async function GET(req: NextRequest) {
   try {
@@ -121,7 +130,7 @@ export async function POST(req: NextRequest) {
     
     // Add invoice items if provided
     if (body.items && Array.isArray(body.items) && body.items.length > 0) {
-      const invoiceItems = body.items.map((item: any) => ({
+      const invoiceItems = body.items.map((item: InvoiceItem) => ({
         invoice_id: invoice.id,
         description: item.description || '',
         quantity: item.quantity || 1,

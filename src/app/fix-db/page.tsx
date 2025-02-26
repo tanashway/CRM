@@ -1,127 +1,107 @@
-'use client';
+"use client";
 
-import { useState, useEffect } from 'react';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Loader2 } from 'lucide-react';
-import { useToast } from '@/components/ui/use-toast';
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { Loader2, CheckCircle, AlertCircle } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 
-export default function FixDbPage() {
-  const [isLoading, setIsLoading] = useState(false);
-  const [isAutoFixing, setIsAutoFixing] = useState(true);
-  const [result, setResult] = useState<any>(null);
-  const { toast } = useToast();
+interface FixDatabaseResponse {
+  success: boolean;
+  message: string;
+  details?: {
+    usersCreated?: boolean;
+    contactsCreated?: boolean;
+  };
+}
 
-  // Auto-run the fix when the page loads
-  useEffect(() => {
-    if (isAutoFixing) {
-      fixDatabase();
-      setIsAutoFixing(false);
-    }
-  }, [isAutoFixing]);
+export default function FixDatabasePage() {
+  const router = useRouter();
+  const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
+  const [result, setResult] = useState<FixDatabaseResponse | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   const fixDatabase = async () => {
     try {
-      setIsLoading(true);
-      setResult(null);
+      setStatus("loading");
+      const response = await fetch("/api/fix-db");
       
-      const response = await fetch('/api/fix-db');
-      const data = await response.json();
-      
-      setResult(data);
-      
-      if (response.ok) {
-        toast({
-          title: 'Success',
-          description: 'Database fixed successfully',
-          variant: 'default',
-        });
-      } else {
-        toast({
-          title: 'Error',
-          description: data.error || 'Failed to fix database',
-          variant: 'destructive',
-        });
+      if (!response.ok) {
+        throw new Error(`Failed to fix database: ${response.status}`);
       }
-    } catch (error) {
-      console.error('Error fixing database:', error);
-      toast({
-        title: 'Error',
-        description: error instanceof Error ? error.message : 'Failed to fix database',
-        variant: 'destructive',
-      });
-    } finally {
-      setIsLoading(false);
+      
+      const data = await response.json();
+      setResult(data);
+      setStatus("success");
+    } catch (err) {
+      console.error("Error fixing database:", err);
+      setError(err instanceof Error ? err.message : "An unknown error occurred");
+      setStatus("error");
     }
   };
 
+  useEffect(() => {
+    fixDatabase();
+  }, []);
+
   return (
     <div className="container mx-auto py-10">
-      <Card className="max-w-2xl mx-auto">
+      <Card className="max-w-md mx-auto">
         <CardHeader>
-          <CardTitle>Database Fix</CardTitle>
-          <CardDescription>
-            Fix your database tables for the CRM application.
-            This page automatically attempts to fix your database when loaded.
-          </CardDescription>
+          <CardTitle>Database Setup</CardTitle>
+          <CardDescription>Setting up your database tables</CardDescription>
         </CardHeader>
-        <CardContent>
-          <p className="mb-4">
-            This will create the following tables if they don't exist:
-          </p>
-          <ul className="list-disc pl-6 mb-4 space-y-2">
-            <li><code className="bg-slate-100 dark:bg-slate-800 px-1 py-0.5 rounded">users</code> - Stores user information synced from Clerk</li>
-            <li><code className="bg-slate-100 dark:bg-slate-800 px-1 py-0.5 rounded">contacts</code> - Stores contact information</li>
-          </ul>
-          <div className="bg-slate-100 dark:bg-slate-800 p-4 rounded-md">
-            <p className="text-sm font-mono">
-              Note: This operation is safe to run multiple times. It will not delete existing data.
-            </p>
-          </div>
+        <CardContent className="flex flex-col items-center justify-center py-8">
+          {status === "loading" && (
+            <>
+              <Loader2 className="h-12 w-12 animate-spin text-primary mb-4" />
+              <p className="text-center text-muted-foreground">
+                Setting up your database tables...
+              </p>
+            </>
+          )}
+          
+          {status === "success" && (
+            <>
+              <CheckCircle className="h-12 w-12 text-green-500 mb-4" />
+              <h3 className="text-xl font-semibold mb-2">Setup Complete!</h3>
+              <p className="text-center text-muted-foreground mb-4">
+                Your database tables have been created successfully.
+              </p>
+              <div className="w-full bg-muted p-4 rounded-md text-sm">
+                <p className="font-medium">Details:</p>
+                <p>Users table: {result?.details?.usersCreated ? "Created" : "Already exists"}</p>
+                <p>Contacts table: {result?.details?.contactsCreated ? "Created" : "Already exists"}</p>
+              </div>
+            </>
+          )}
+          
+          {status === "error" && (
+            <>
+              <AlertCircle className="h-12 w-12 text-destructive mb-4" />
+              <h3 className="text-xl font-semibold mb-2">Setup Failed</h3>
+              <p className="text-center text-muted-foreground mb-4">
+                There was an error setting up your database.
+              </p>
+              <div className="w-full bg-destructive/10 p-4 rounded-md text-sm text-destructive">
+                <p className="font-medium">Error:</p>
+                <p>{error || "Unknown error"}</p>
+                <p className="mt-2">
+                  Don&apos;t worry, you can try again or contact support if the issue persists.
+                </p>
+              </div>
+            </>
+          )}
         </CardContent>
-        <CardFooter>
+        <CardFooter className="flex justify-center">
           <Button 
-            onClick={fixDatabase} 
-            disabled={isLoading}
-            className="w-full"
+            onClick={() => router.push("/contacts")}
+            disabled={status === "loading"}
           >
-            {isLoading ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Fixing...
-              </>
-            ) : (
-              'Fix Database Again'
-            )}
+            Go to Contacts
           </Button>
         </CardFooter>
       </Card>
-      
-      {result && (
-        <Card className="max-w-2xl mx-auto mt-6">
-          <CardHeader>
-            <CardTitle>Result</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <pre className="bg-slate-100 dark:bg-slate-800 p-4 rounded-md overflow-auto text-sm">
-              {JSON.stringify(result, null, 2)}
-            </pre>
-          </CardContent>
-          <CardFooter className="flex justify-between">
-            <Button 
-              onClick={() => window.location.href = '/contacts'}
-              variant="outline"
-            >
-              Go to Contacts
-            </Button>
-            <Button 
-              onClick={() => window.location.href = '/dashboard'}
-            >
-              Go to Dashboard
-            </Button>
-          </CardFooter>
-        </Card>
-      )}
     </div>
   );
 } 
