@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getCurrentUser, checkUserAccess } from '@/lib/auth';
-import { supabaseAdmin } from '@/lib/supabase';
+import { supabaseAdmin } from '@/lib/supabase/server';
 
 // GET /api/invoices/[id] - Get a specific invoice with items
 export async function GET(
@@ -8,7 +8,7 @@ export async function GET(
   { params }: { params: { id: string } }
 ) {
   try {
-    const clerkId = getCurrentUser();
+    const clerkId = await getCurrentUser();
     
     if (!clerkId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
@@ -73,7 +73,7 @@ export async function PUT(
   { params }: { params: { id: string } }
 ) {
   try {
-    const clerkId = getCurrentUser();
+    const clerkId = await getCurrentUser();
     
     if (!clerkId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
@@ -165,7 +165,7 @@ export async function DELETE(
   { params }: { params: { id: string } }
 ) {
   try {
-    const clerkId = getCurrentUser();
+    const clerkId = await getCurrentUser();
     
     if (!clerkId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });

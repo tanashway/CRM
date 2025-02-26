@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getCurrentUser, checkUserAccess } from '@/lib/auth';
-import { supabaseAdmin } from '@/lib/supabase';
+import { supabaseAdmin } from '@/lib/supabase/server';
 
 // GET /api/tasks/[id] - Get a specific task
 export async function GET(
@@ -8,7 +8,7 @@ export async function GET(
   { params }: { params: { id: string } }
 ) {
   try {
-    const clerkId = getCurrentUser();
+    const clerkId = await getCurrentUser();
     
     if (!clerkId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
@@ -43,7 +43,7 @@ export async function GET(
     
     return NextResponse.json(data);
   } catch (error) {
-    console.error('Error in task GET route:', error);
+    console.error('Error in tasks GET route:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
@@ -54,7 +54,7 @@ export async function PUT(
   { params }: { params: { id: string } }
 ) {
   try {
-    const clerkId = getCurrentUser();
+    const clerkId = await getCurrentUser();
     
     if (!clerkId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
@@ -119,7 +119,7 @@ export async function PUT(
     
     return NextResponse.json(data);
   } catch (error) {
-    console.error('Error in task PUT route:', error);
+    console.error('Error in tasks PUT route:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
@@ -130,7 +130,7 @@ export async function DELETE(
   { params }: { params: { id: string } }
 ) {
   try {
-    const clerkId = getCurrentUser();
+    const clerkId = await getCurrentUser();
     
     if (!clerkId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
@@ -154,7 +154,7 @@ export async function DELETE(
     
     return new NextResponse(null, { status: 204 });
   } catch (error) {
-    console.error('Error in task DELETE route:', error);
+    console.error('Error in tasks DELETE route:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 } 

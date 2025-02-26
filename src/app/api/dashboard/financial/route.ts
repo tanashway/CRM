@@ -1,11 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getCurrentUser, getCurrentUserData } from '@/lib/auth';
-import { supabaseAdmin } from '@/lib/supabase';
+import { supabaseAdmin } from '@/lib/supabase/server';
 
 // GET /api/dashboard/financial - Get financial data for charts
 export async function GET(req: NextRequest) {
   try {
-    const clerkId = getCurrentUser();
+    const clerkId = await getCurrentUser();
     
     if (!clerkId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });

@@ -1,17 +1,33 @@
-import { createClient } from '@supabase/supabase-js';
+import { createClient as createServerClient } from '@supabase/supabase-js';
+import { cookies } from 'next/headers';
 
-// Initialize the Supabase client with environment variables
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
+// Initialize the Supabase admin client with environment variables
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
-// Client for browser usage (with anonymous key)
-export const supabaseClient = createClient(supabaseUrl, supabaseAnonKey);
+// Check if environment variables are set
+if (!supabaseUrl) {
+  console.error('NEXT_PUBLIC_SUPABASE_URL is not set');
+}
 
-// Client for server usage (with service role key)
-export const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey);
+if (!supabaseServiceKey) {
+  console.error('SUPABASE_SERVICE_ROLE_KEY is not set');
+}
 
-// Helper function to get the appropriate client based on context
-export function getSupabase(admin = false) {
-  return admin ? supabaseAdmin : supabaseClient;
+// Admin client for server usage (with service role key)
+export const supabaseAdmin = createServerClient(
+  supabaseUrl || '',
+  supabaseServiceKey || ''
+);
+
+// Helper function to get the Supabase client for API routes
+export async function getSupabaseClient() {
+  try {
+    const { createClient } = await import('@/utils/supabase/server');
+    const cookieStore = cookies();
+    return createClient(cookieStore);
+  } catch (error) {
+    console.error('Error creating Supabase client:', error);
+    return supabaseAdmin; // Fallback to admin client
+  }
 } 

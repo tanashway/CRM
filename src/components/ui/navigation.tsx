@@ -5,6 +5,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import { useClerk } from '@clerk/nextjs';
 import { Button } from '@/components/ui/button';
 import { MobileNav } from '@/components/ui/mobile-nav';
+import { SyncUserButton } from '@/components/sync-user-button';
 
 export function Navigation() {
   const pathname = usePathname();
@@ -72,8 +73,9 @@ export function Navigation() {
         </div>
         <div className="flex items-center space-x-4">
           <div className="hidden md:block">
+            <SyncUserButton />
             <Link href="/profile">
-              <Button variant="outline" size="sm">
+              <Button variant="outline" size="sm" className="ml-2">
                 Profile
               </Button>
             </Link>
