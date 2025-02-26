@@ -19,7 +19,6 @@ export async function GET(req: NextRequest) {
     
     // Get query parameters
     const url = new URL(req.url);
-    const period = url.searchParams.get('period') || 'month';
     const startDate = url.searchParams.get('start_date') 
       ? new Date(url.searchParams.get('start_date')!) 
       : new Date(new Date().setDate(new Date().getDate() - 30));
@@ -139,21 +138,21 @@ export async function GET(req: NextRequest) {
 
 // Helper function to group financial data by date
 function groupFinancialDataByDate(
-  data: Array<{ [key: string]: any }>,
+  data: Array<{ [key: string]: unknown }>,
   dateField: string,
   amountField: string
 ): Record<string, number> {
   const result: Record<string, number> = {};
   
   data.forEach(item => {
-    const date = new Date(item[dateField]);
+    const date = new Date(item[dateField] as string);
     const dateStr = date.toISOString().split('T')[0];
     
     if (!result[dateStr]) {
       result[dateStr] = 0;
     }
     
-    result[dateStr] += item[amountField] || 0;
+    result[dateStr] += (item[amountField] as number) || 0;
   });
   
   return result;
@@ -162,7 +161,7 @@ function groupFinancialDataByDate(
 // Helper function to get all dates in a range
 function getDateRange(startDate: Date, endDate: Date): Date[] {
   const dates: Date[] = [];
-  let currentDate = new Date(startDate);
+  const currentDate = new Date(startDate);
   
   while (currentDate <= endDate) {
     dates.push(new Date(currentDate));
@@ -173,7 +172,7 @@ function getDateRange(startDate: Date, endDate: Date): Date[] {
 }
 
 // Define proper types for the monthly revenue data
-interface MonthlyRevenueData {
+export interface MonthlyRevenueData {
   month: string;
   revenue: number;
 } 

@@ -3,7 +3,7 @@ import { getCurrentUser, checkUserAccess } from '@/lib/auth';
 import { supabaseAdmin } from '@/lib/supabase/server';
 
 // Define proper types for invoice items
-interface InvoiceItemType {
+export interface InvoiceItemType {
   id: string;
   invoice_id: string;
   description: string;

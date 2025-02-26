@@ -1,5 +1,4 @@
 import { NextResponse } from 'next/server';
-import { supabaseAdmin } from '@/lib/supabase/server';
 import { createClient } from '@supabase/supabase-js';
 
 // GET /api/fix-db - Fix database tables
@@ -27,7 +26,7 @@ export async function GET() {
       await supabase.rpc('exec_sql', {
         sql_string: `CREATE EXTENSION IF NOT EXISTS "uuid-ossp";`
       });
-    } catch (error) {
+    } catch {
       console.log('Note: Could not enable UUID extension. Using gen_random_uuid() instead.');
     }
 
