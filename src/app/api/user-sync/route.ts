@@ -25,7 +25,14 @@ export async function POST(req: NextRequest) {
     
     let userId: string | null | undefined = null;
     let eventType: string | null = null;
-    let userData: any = null;
+    let userData: {
+      id?: string;
+      emailAddresses?: Array<{ id: string; emailAddress: string }>;
+      primaryEmailAddressId?: string;
+      firstName?: string | null;
+      lastName?: string | null;
+      [key: string]: unknown;
+    } | null = null;
     
     if (!isManualSync) {
       // Verify the webhook signature for automated requests
@@ -68,6 +75,7 @@ export async function POST(req: NextRequest) {
       // Process based on event type
       if (eventType === 'user.created' || eventType === 'user.updated') {
         userId = evt.data.id;
+        // @ts-ignore - Clerk webhook data structure
         userData = evt.data;
       } else {
         // We only care about user events for syncing
@@ -90,6 +98,7 @@ export async function POST(req: NextRequest) {
       if (!userId) {
         return NextResponse.json({ error: 'User ID is required' }, { status: 400 });
       }
+      // @ts-ignore - Clerk API response structure
       userData = await clerk.users.getUser(userId);
       
       if (!userData) {

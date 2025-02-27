@@ -21,7 +21,7 @@ export const createClient = (cookieStore: ReturnType<typeof cookies>) => {
             // user sessions.
           }
         },
-        async remove(name: string, options: { path: string }) {
+        async remove(name: string, _options: { path: string }) {
           try {
             const cookiesStore = await cookieStore;
             cookiesStore.delete(name);
