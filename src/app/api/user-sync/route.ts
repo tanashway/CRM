@@ -75,7 +75,7 @@ export async function POST(req: NextRequest) {
       // Process based on event type
       if (eventType === 'user.created' || eventType === 'user.updated') {
         userId = evt.data.id;
-        // @ts-ignore - Clerk webhook data structure
+        // @ts-expect-error - Clerk webhook data structure
         userData = evt.data;
       } else {
         // We only care about user events for syncing
@@ -98,7 +98,7 @@ export async function POST(req: NextRequest) {
       if (!userId) {
         return NextResponse.json({ error: 'User ID is required' }, { status: 400 });
       }
-      // @ts-ignore - Clerk API response structure
+      // @ts-expect-error - Clerk API response structure
       userData = await clerk.users.getUser(userId);
       
       if (!userData) {
