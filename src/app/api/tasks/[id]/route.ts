@@ -5,7 +5,7 @@ import { supabaseAdmin } from '@/lib/supabase/server';
 // Force a fresh build on Vercel
 // GET /api/tasks/[id] - Get a specific task
 export async function GET(
-  req: NextRequest,
+  request: NextRequest,
   context: { params: { id: string } }
 ) {
   try {
@@ -51,7 +51,7 @@ export async function GET(
 
 // PUT /api/tasks/[id] - Update a specific task
 export async function PUT(
-  req: NextRequest,
+  request: NextRequest,
   context: { params: { id: string } }
 ) {
   try {
@@ -67,7 +67,7 @@ export async function PUT(
       return NextResponse.json({ error: 'Not found' }, { status: 404 });
     }
     
-    const body = await req.json();
+    const body = await request.json();
     
     // Validate required fields
     if (!body.title) {
@@ -127,7 +127,7 @@ export async function PUT(
 
 // DELETE /api/tasks/[id] - Delete a specific task
 export async function DELETE(
-  req: NextRequest,
+  request: NextRequest,
   context: { params: { id: string } }
 ) {
   try {
