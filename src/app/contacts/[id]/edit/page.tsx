@@ -8,6 +8,8 @@ import { getContact } from "@/lib/contacts-service";
 import { toast } from "@/components/ui/use-toast";
 import { Contact } from "@/lib/contacts-service";
 
+// For client components, we need to use a different approach
+// since we can't use async/await at the component level
 interface EditContactPageProps {
   params: {
     id: string;
@@ -21,9 +23,7 @@ export default function EditContactPage(props: EditContactPageProps) {
   const [error, setError] = useState<string | null>(null);
   
   // Get the ID safely
-  const contactId = typeof props.params === 'object' && props.params !== null 
-    ? props.params.id 
-    : '';
+  const contactId = props.params?.id || '';
 
   useEffect(() => {
     const fetchContact = async () => {
@@ -100,7 +100,7 @@ export default function EditContactPage(props: EditContactPageProps) {
       </div>
       
       <div className="rounded-lg border bg-card p-8">
-        <ContactForm initialData={contact} onSuccess={handleSuccess} />
+        {contact && <ContactForm initialData={contact} onSuccess={handleSuccess} />}
       </div>
     </div>
   );
