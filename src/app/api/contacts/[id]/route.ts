@@ -5,7 +5,7 @@ import { supabaseAdmin } from '@/lib/supabase/server';
 // Force a fresh build on Vercel
 // GET /api/contacts/[id] - Get a specific contact
 export async function GET(
-  request: NextRequest,
+  req: NextRequest,
   { params }: { params: { id: string } }
 ) {
   try {
@@ -46,7 +46,7 @@ export async function GET(
 
 // PATCH /api/contacts/[id] - Update a specific contact
 export async function PATCH(
-  request: NextRequest,
+  req: NextRequest,
   { params }: { params: { id: string } }
 ) {
   try {
@@ -62,7 +62,7 @@ export async function PATCH(
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
     
-    const body = await request.json();
+    const body = await req.json();
     
     // Validate required fields
     if (!body.first_name) {
@@ -114,7 +114,7 @@ export async function PATCH(
 
 // PUT /api/contacts/[id] - Update a specific contact (alias for PATCH)
 export async function PUT(
-  request: NextRequest,
+  req: NextRequest,
   { params }: { params: { id: string } }
 ) {
   try {
@@ -130,7 +130,7 @@ export async function PUT(
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
     
-    const body = await request.json();
+    const body = await req.json();
     
     // Validate required fields
     if (!body.first_name) {
@@ -182,7 +182,7 @@ export async function PUT(
 
 // DELETE /api/contacts/[id] - Delete a specific contact
 export async function DELETE(
-  request: NextRequest,
+  req: NextRequest,
   { params }: { params: { id: string } }
 ) {
   try {

@@ -15,7 +15,7 @@ export interface InvoiceItemType {
 
 // GET /api/invoices/[id] - Get a specific invoice with items
 export async function GET(
-  request: NextRequest,
+  req: NextRequest,
   { params }: { params: { id: string } }
 ) {
   try {
@@ -78,7 +78,7 @@ export async function GET(
 
 // PUT /api/invoices/[id] - Update an invoice
 export async function PUT(
-  request: NextRequest,
+  req: NextRequest,
   { params }: { params: { id: string } }
 ) {
   try {
@@ -95,7 +95,7 @@ export async function PUT(
       return NextResponse.json({ error: 'Not found' }, { status: 404 });
     }
     
-    const body = await request.json();
+    const body = await req.json();
     
     // Validate required fields
     if (!body.contact_id || !body.invoice_number || !body.issue_date || !body.due_date) {
@@ -176,7 +176,7 @@ export async function PUT(
 
 // DELETE /api/invoices/[id] - Delete an invoice
 export async function DELETE(
-  request: NextRequest,
+  req: NextRequest,
   { params }: { params: { id: string } }
 ) {
   try {
