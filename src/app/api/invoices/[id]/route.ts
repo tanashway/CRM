@@ -16,7 +16,7 @@ export interface InvoiceItemType {
 // GET /api/invoices/[id] - Get a specific invoice with items
 export async function GET(
   request: NextRequest,
-  context: { params: { id: string } }
+  { params }: { params: { id: string } }
 ) {
   try {
     const clerkId = await getCurrentUser();
@@ -26,7 +26,7 @@ export async function GET(
     }
     
     // Check if user has access to this invoice
-    const hasAccess = await checkUserAccess('invoices', context.params.id);
+    const hasAccess = await checkUserAccess('invoices', params.id);
     
     if (!hasAccess) {
       return NextResponse.json({ error: 'Not found' }, { status: 404 });
@@ -46,7 +46,7 @@ export async function GET(
           phone
         )
       `)
-      .eq('id', context.params.id)
+      .eq('id', params.id)
       .single();
     
     if (invoiceError) {
@@ -58,7 +58,7 @@ export async function GET(
     const { data: items, error: itemsError } = await supabaseAdmin
       .from('invoice_items')
       .select('*')
-      .eq('invoice_id', context.params.id)
+      .eq('invoice_id', params.id)
       .order('created_at', { ascending: true });
     
     if (itemsError) {
@@ -79,7 +79,7 @@ export async function GET(
 // PUT /api/invoices/[id] - Update an invoice
 export async function PUT(
   request: NextRequest,
-  context: { params: { id: string } }
+  { params }: { params: { id: string } }
 ) {
   try {
     const clerkId = await getCurrentUser();
@@ -89,7 +89,7 @@ export async function PUT(
     }
     
     // Check if user has access to this invoice
-    const hasAccess = await checkUserAccess('invoices', context.params.id);
+    const hasAccess = await checkUserAccess('invoices', params.id);
     
     if (!hasAccess) {
       return NextResponse.json({ error: 'Not found' }, { status: 404 });
@@ -117,7 +117,7 @@ export async function PUT(
         notes: body.notes || '',
         updated_at: new Date().toISOString(),
       })
-      .eq('id', context.params.id)
+      .eq('id', params.id)
       .select()
       .single();
     
@@ -132,7 +132,7 @@ export async function PUT(
       const { error: deleteError } = await supabaseAdmin
         .from('invoice_items')
         .delete()
-        .eq('invoice_id', context.params.id);
+        .eq('invoice_id', params.id);
       
       if (deleteError) {
         console.error('Error deleting invoice items:', deleteError);
@@ -146,7 +146,7 @@ export async function PUT(
           const unitPrice = typeof item.unit_price === 'number' ? item.unit_price : 0;
           
           return {
-            invoice_id: context.params.id,
+            invoice_id: params.id,
             description: item.description || '',
             quantity: quantity,
             unit_price: unitPrice,
@@ -177,7 +177,7 @@ export async function PUT(
 // DELETE /api/invoices/[id] - Delete an invoice
 export async function DELETE(
   request: NextRequest,
-  context: { params: { id: string } }
+  { params }: { params: { id: string } }
 ) {
   try {
     const clerkId = await getCurrentUser();
@@ -187,7 +187,7 @@ export async function DELETE(
     }
     
     // Check if user has access to this invoice
-    const hasAccess = await checkUserAccess('invoices', context.params.id);
+    const hasAccess = await checkUserAccess('invoices', params.id);
     
     if (!hasAccess) {
       return NextResponse.json({ error: 'Not found' }, { status: 404 });
@@ -197,7 +197,7 @@ export async function DELETE(
     const { error: deleteError } = await supabaseAdmin
       .from('invoices')
       .delete()
-      .eq('id', context.params.id);
+      .eq('id', params.id);
     
     if (deleteError) {
       console.error('Error deleting invoice:', deleteError);
