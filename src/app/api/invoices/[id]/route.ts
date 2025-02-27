@@ -33,20 +33,10 @@ export async function GET(
       return NextResponse.json({ error: 'Not found' }, { status: 404 });
     }
     
-    // Get invoice with contact info
+    // First, get the basic invoice data without the join
     const { data: invoice, error: invoiceError } = await supabaseAdmin
       .from('invoices')
-      .select(`
-        *,
-        contacts (
-          id,
-          first_name,
-          last_name,
-          email,
-          company,
-          phone
-        )
-      `)
+      .select('*')
       .eq('id', params.id)
       .single();
     
@@ -67,9 +57,26 @@ export async function GET(
       return NextResponse.json({ error: 'Failed to fetch invoice items' }, { status: 500 });
     }
     
+    // Try to get contact information separately
+    let contact = null;
+    if (invoice.contact_id) {
+      const { data: contactData, error: contactError } = await supabaseAdmin
+        .from('contacts')
+        .select('id, first_name, last_name, email, company, phone')
+        .eq('id', invoice.contact_id)
+        .single();
+      
+      if (!contactError && contactData) {
+        contact = contactData;
+      } else {
+        console.warn('Could not fetch contact for invoice:', contactError);
+      }
+    }
+    
     return NextResponse.json({
       ...invoice,
       items: items || [],
+      contacts: contact // Include contact data if available
     });
   } catch (error) {
     console.error('Error in invoice GET route:', error);
@@ -143,28 +150,64 @@ export async function PUT(
       
       // Add new items
       if (body.items.length > 0) {
+        // Log the items we're trying to insert
+        console.log('Attempting to insert invoice items:', body.items);
+        
+        // Simplify the items structure to only include essential fields
         const invoiceItems = body.items.map((item: Record<string, unknown>) => {
           const quantity = typeof item.quantity === 'number' ? item.quantity : 1;
           const unitPrice = typeof item.unit_price === 'number' ? item.unit_price : 0;
+          const calculatedAmount = quantity * unitPrice;
           
+          // Create a simplified item object with only essential fields
           return {
             invoice_id: params.id,
             description: item.description || '',
             quantity: quantity,
             unit_price: unitPrice,
-            total: quantity * unitPrice,
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString(),
+            // Include both field names but as separate objects to try each one
           };
         });
         
-        const { error: insertError } = await supabaseAdmin
-          .from('invoice_items')
-          .insert(invoiceItems);
-        
-        if (insertError) {
-          console.error('Error creating invoice items:', insertError);
-          return NextResponse.json({ error: 'Failed to update invoice items' }, { status: 500 });
+        // Try inserting with 'amount' field
+        try {
+          const itemsWithAmount = invoiceItems.map((item: { invoice_id: string; description: string; quantity: number; unit_price: number }) => ({
+            ...item,
+            amount: item.quantity * item.unit_price
+          }));
+          
+          const { error: insertError } = await supabaseAdmin
+            .from('invoice_items')
+            .insert(itemsWithAmount);
+          
+          if (insertError) {
+            console.error('Error creating invoice items with amount field:', insertError);
+            
+            // If that fails, try with 'total' field
+            const itemsWithTotal = invoiceItems.map((item: { invoice_id: string; description: string; quantity: number; unit_price: number }) => ({
+              ...item,
+              total: item.quantity * item.unit_price
+            }));
+            
+            const { error: insertError2 } = await supabaseAdmin
+              .from('invoice_items')
+              .insert(itemsWithTotal);
+            
+            if (insertError2) {
+              console.error('Error creating invoice items with total field:', insertError2);
+              return NextResponse.json({ 
+                error: 'Failed to update invoice items',
+                details: insertError2.message,
+                code: insertError2.code
+              }, { status: 500 });
+            }
+          }
+        } catch (error) {
+          console.error('Exception when inserting invoice items:', error);
+          return NextResponse.json({ 
+            error: 'Failed to update invoice items',
+            details: error instanceof Error ? error.message : 'Unknown error'
+          }, { status: 500 });
         }
       }
     }
