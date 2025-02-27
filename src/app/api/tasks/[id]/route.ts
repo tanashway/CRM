@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 import { getCurrentUser, checkUserAccess } from '@/lib/auth';
 import { supabaseAdmin } from '@/lib/supabase/server';
 import { RouteHandler } from '@/types/next';
