@@ -1,14 +1,13 @@
 import { NextResponse } from 'next/server';
 import { getCurrentUser, getCurrentUserData } from '@/lib/auth';
 import { supabaseAdmin } from '@/lib/supabase/server';
-import { RouteHandler } from '@/types/next';
 
 // Force a fresh build on Vercel
 // GET /api/contacts/[id] - Get a specific contact
-export const GET: RouteHandler = async (
-  req,
-  context
-) => {
+export async function GET(
+  req: Request,
+  { params }: { params: { id: string } }
+) {
   try {
     const clerkId = await getCurrentUser();
     
@@ -25,7 +24,7 @@ export const GET: RouteHandler = async (
     const { data, error } = await supabaseAdmin
       .from('contacts')
       .select('*')
-      .eq('id', context.params.id)
+      .eq('id', params.id)
       .eq('user_id', userData.id)
       .single();
     
@@ -43,13 +42,13 @@ export const GET: RouteHandler = async (
     console.error('Error in contact GET route:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
-};
+}
 
 // PATCH /api/contacts/[id] - Update a specific contact
-export const PATCH: RouteHandler = async (
-  req,
-  context
-) => {
+export async function PATCH(
+  req: Request,
+  { params }: { params: { id: string } }
+) {
   try {
     const clerkId = await getCurrentUser();
     
@@ -74,7 +73,7 @@ export const PATCH: RouteHandler = async (
     const { data: existingContact, error: fetchError } = await supabaseAdmin
       .from('contacts')
       .select('id')
-      .eq('id', context.params.id)
+      .eq('id', params.id)
       .eq('user_id', userData.id)
       .single();
     
@@ -96,7 +95,7 @@ export const PATCH: RouteHandler = async (
         status: body.status || 'active',
         updated_at: new Date().toISOString(),
       })
-      .eq('id', context.params.id)
+      .eq('id', params.id)
       .eq('user_id', userData.id)
       .select()
       .single();
@@ -111,13 +110,13 @@ export const PATCH: RouteHandler = async (
     console.error('Error in contact PATCH route:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
-};
+}
 
 // PUT /api/contacts/[id] - Update a specific contact (alias for PATCH)
-export const PUT: RouteHandler = async (
-  req,
-  context
-) => {
+export async function PUT(
+  req: Request,
+  { params }: { params: { id: string } }
+) {
   try {
     const clerkId = await getCurrentUser();
     
@@ -142,7 +141,7 @@ export const PUT: RouteHandler = async (
     const { data: existingContact, error: fetchError } = await supabaseAdmin
       .from('contacts')
       .select('id')
-      .eq('id', context.params.id)
+      .eq('id', params.id)
       .eq('user_id', userData.id)
       .single();
     
@@ -164,7 +163,7 @@ export const PUT: RouteHandler = async (
         status: body.status || 'active',
         updated_at: new Date().toISOString(),
       })
-      .eq('id', context.params.id)
+      .eq('id', params.id)
       .eq('user_id', userData.id)
       .select()
       .single();
@@ -179,13 +178,13 @@ export const PUT: RouteHandler = async (
     console.error('Error in contact PUT route:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
-};
+}
 
 // DELETE /api/contacts/[id] - Delete a specific contact
-export const DELETE: RouteHandler = async (
-  req,
-  context
-) => {
+export async function DELETE(
+  req: Request,
+  { params }: { params: { id: string } }
+) {
   try {
     const clerkId = await getCurrentUser();
     
@@ -203,7 +202,7 @@ export const DELETE: RouteHandler = async (
     const { data: existingContact, error: fetchError } = await supabaseAdmin
       .from('contacts')
       .select('id')
-      .eq('id', context.params.id)
+      .eq('id', params.id)
       .eq('user_id', userData.id)
       .single();
     
@@ -215,7 +214,7 @@ export const DELETE: RouteHandler = async (
     const { error } = await supabaseAdmin
       .from('contacts')
       .delete()
-      .eq('id', context.params.id)
+      .eq('id', params.id)
       .eq('user_id', userData.id);
     
     if (error) {
@@ -228,4 +227,4 @@ export const DELETE: RouteHandler = async (
     console.error('Error in contact DELETE route:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
-}; 
+} 

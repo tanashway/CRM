@@ -1,14 +1,13 @@
 import { NextResponse } from 'next/server';
 import { getCurrentUser, checkUserAccess } from '@/lib/auth';
 import { supabaseAdmin } from '@/lib/supabase/server';
-import { RouteHandler } from '@/types/next';
 
 // Force a fresh build on Vercel
 // GET /api/tasks/[id] - Get a specific task
-export const GET: RouteHandler = async (
-  req,
-  context
-) => {
+export async function GET(
+  req: Request,
+  { params }: { params: { id: string } }
+) {
   try {
     const clerkId = await getCurrentUser();
     
@@ -16,7 +15,7 @@ export const GET: RouteHandler = async (
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
     
-    const hasAccess = await checkUserAccess('tasks', context.params.id);
+    const hasAccess = await checkUserAccess('tasks', params.id);
     
     if (!hasAccess) {
       return NextResponse.json({ error: 'Not found' }, { status: 404 });
@@ -35,7 +34,7 @@ export const GET: RouteHandler = async (
           company
         )
       `)
-      .eq('id', context.params.id)
+      .eq('id', params.id)
       .single();
     
     if (error) {
@@ -48,13 +47,13 @@ export const GET: RouteHandler = async (
     console.error('Error in tasks GET route:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
-};
+}
 
 // PUT /api/tasks/[id] - Update a specific task
-export const PUT: RouteHandler = async (
-  req,
-  context
-) => {
+export async function PUT(
+  req: Request,
+  { params }: { params: { id: string } }
+) {
   try {
     const clerkId = await getCurrentUser();
     
@@ -62,7 +61,7 @@ export const PUT: RouteHandler = async (
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
     
-    const hasAccess = await checkUserAccess('tasks', context.params.id);
+    const hasAccess = await checkUserAccess('tasks', params.id);
     
     if (!hasAccess) {
       return NextResponse.json({ error: 'Not found' }, { status: 404 });
@@ -80,7 +79,7 @@ export const PUT: RouteHandler = async (
       const { data: userData, error: userError } = await supabaseAdmin
         .from('tasks')
         .select('user_id')
-        .eq('id', context.params.id)
+        .eq('id', params.id)
         .single();
       
       if (userError || !userData) {
@@ -110,7 +109,7 @@ export const PUT: RouteHandler = async (
         priority: body.priority || 'medium',
         updated_at: new Date().toISOString(),
       })
-      .eq('id', context.params.id)
+      .eq('id', params.id)
       .select()
       .single();
     
@@ -124,13 +123,13 @@ export const PUT: RouteHandler = async (
     console.error('Error in tasks PUT route:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
-};
+}
 
 // DELETE /api/tasks/[id] - Delete a specific task
-export const DELETE: RouteHandler = async (
-  req,
-  context
-) => {
+export async function DELETE(
+  req: Request,
+  { params }: { params: { id: string } }
+) {
   try {
     const clerkId = await getCurrentUser();
     
@@ -138,7 +137,7 @@ export const DELETE: RouteHandler = async (
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
     
-    const hasAccess = await checkUserAccess('tasks', context.params.id);
+    const hasAccess = await checkUserAccess('tasks', params.id);
     
     if (!hasAccess) {
       return NextResponse.json({ error: 'Not found' }, { status: 404 });
@@ -147,7 +146,7 @@ export const DELETE: RouteHandler = async (
     const { error } = await supabaseAdmin
       .from('tasks')
       .delete()
-      .eq('id', context.params.id);
+      .eq('id', params.id);
     
     if (error) {
       console.error('Error deleting task:', error);
@@ -159,4 +158,4 @@ export const DELETE: RouteHandler = async (
     console.error('Error in tasks DELETE route:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
-}; 
+} 
