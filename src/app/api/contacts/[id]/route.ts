@@ -6,9 +6,10 @@ import { supabaseAdmin } from '@/lib/supabase/server';
 // GET /api/contacts/[id] - Get a specific contact
 export async function GET(
   req: Request,
-  { params }: { params: { id: string } }
+  context: { params: Promise<{ id: string }> }
 ) {
   try {
+    const params = await context.params;
     const clerkId = await getCurrentUser();
     
     if (!clerkId) {
@@ -47,9 +48,10 @@ export async function GET(
 // PATCH /api/contacts/[id] - Update a specific contact
 export async function PATCH(
   req: Request,
-  { params }: { params: { id: string } }
+  context: { params: Promise<{ id: string }> }
 ) {
   try {
+    const params = await context.params;
     const clerkId = await getCurrentUser();
     
     if (!clerkId) {
@@ -115,9 +117,10 @@ export async function PATCH(
 // PUT /api/contacts/[id] - Update a specific contact (alias for PATCH)
 export async function PUT(
   req: Request,
-  { params }: { params: { id: string } }
+  context: { params: Promise<{ id: string }> }
 ) {
   try {
+    const params = await context.params;
     const clerkId = await getCurrentUser();
     
     if (!clerkId) {
@@ -183,9 +186,10 @@ export async function PUT(
 // DELETE /api/contacts/[id] - Delete a specific contact
 export async function DELETE(
   req: Request,
-  { params }: { params: { id: string } }
+  context: { params: Promise<{ id: string }> }
 ) {
   try {
+    const params = await context.params;
     const clerkId = await getCurrentUser();
     
     if (!clerkId) {

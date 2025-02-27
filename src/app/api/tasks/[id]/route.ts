@@ -6,9 +6,10 @@ import { supabaseAdmin } from '@/lib/supabase/server';
 // GET /api/tasks/[id] - Get a specific task
 export async function GET(
   req: Request,
-  { params }: { params: { id: string } }
+  context: { params: Promise<{ id: string }> }
 ) {
   try {
+    const params = await context.params;
     const clerkId = await getCurrentUser();
     
     if (!clerkId) {
@@ -52,9 +53,10 @@ export async function GET(
 // PUT /api/tasks/[id] - Update a specific task
 export async function PUT(
   req: Request,
-  { params }: { params: { id: string } }
+  context: { params: Promise<{ id: string }> }
 ) {
   try {
+    const params = await context.params;
     const clerkId = await getCurrentUser();
     
     if (!clerkId) {
@@ -128,9 +130,10 @@ export async function PUT(
 // DELETE /api/tasks/[id] - Delete a specific task
 export async function DELETE(
   req: Request,
-  { params }: { params: { id: string } }
+  context: { params: Promise<{ id: string }> }
 ) {
   try {
+    const params = await context.params;
     const clerkId = await getCurrentUser();
     
     if (!clerkId) {

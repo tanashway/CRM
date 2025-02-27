@@ -16,9 +16,10 @@ export interface InvoiceItemType {
 // GET /api/invoices/[id] - Get a specific invoice with items
 export async function GET(
   req: Request,
-  { params }: { params: { id: string } }
+  context: { params: Promise<{ id: string }> }
 ) {
   try {
+    const params = await context.params;
     const clerkId = await getCurrentUser();
     
     if (!clerkId) {
@@ -79,9 +80,10 @@ export async function GET(
 // PUT /api/invoices/[id] - Update an invoice
 export async function PUT(
   req: Request,
-  { params }: { params: { id: string } }
+  context: { params: Promise<{ id: string }> }
 ) {
   try {
+    const params = await context.params;
     const clerkId = await getCurrentUser();
     
     if (!clerkId) {
@@ -177,9 +179,10 @@ export async function PUT(
 // DELETE /api/invoices/[id] - Delete an invoice
 export async function DELETE(
   req: Request,
-  { params }: { params: { id: string } }
+  context: { params: Promise<{ id: string }> }
 ) {
   try {
+    const params = await context.params;
     const clerkId = await getCurrentUser();
     
     if (!clerkId) {
