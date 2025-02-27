@@ -71,6 +71,25 @@ export async function GET(req: NextRequest) {
         END IF;
       END
       $$;
+
+      -- Create expenses table
+      CREATE TABLE IF NOT EXISTS expenses (
+        id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+        user_id TEXT NOT NULL,
+        category TEXT NOT NULL,
+        amount DECIMAL(10, 2) NOT NULL,
+        name TEXT NOT NULL,
+        receipt_url TEXT,
+        date DATE NOT NULL,
+        project TEXT,
+        customer_id UUID REFERENCES contacts(id),
+        invoice_id UUID REFERENCES invoices(id),
+        reference TEXT,
+        payment_mode TEXT,
+        notes TEXT,
+        created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+        updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+      );
     `;
     
     // Try to execute SQL using RPC
