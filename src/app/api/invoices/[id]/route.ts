@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getCurrentUser, checkUserAccess } from '@/lib/auth';
 import { supabaseAdmin } from '@/lib/supabase/server';
+import { RouteHandler } from '@/types/next';
 
 // Force a fresh build on Vercel
 // Define proper types for invoice items
@@ -14,10 +15,10 @@ export interface InvoiceItemType {
 }
 
 // GET /api/invoices/[id] - Get a specific invoice with items
-export async function GET(
-  req: NextRequest,
-  { params }: { params: { id: string } }
-) {
+export const GET: RouteHandler = async (
+  req,
+  context
+) => {
   try {
     const clerkId = await getCurrentUser();
     
@@ -26,7 +27,7 @@ export async function GET(
     }
     
     // Check if user has access to this invoice
-    const hasAccess = await checkUserAccess('invoices', params.id);
+    const hasAccess = await checkUserAccess('invoices', context.params.id);
     
     if (!hasAccess) {
       return NextResponse.json({ error: 'Not found' }, { status: 404 });
@@ -46,7 +47,7 @@ export async function GET(
           phone
         )
       `)
-      .eq('id', params.id)
+      .eq('id', context.params.id)
       .single();
     
     if (invoiceError) {
@@ -58,7 +59,7 @@ export async function GET(
     const { data: items, error: itemsError } = await supabaseAdmin
       .from('invoice_items')
       .select('*')
-      .eq('invoice_id', params.id)
+      .eq('invoice_id', context.params.id)
       .order('created_at', { ascending: true });
     
     if (itemsError) {
@@ -74,13 +75,13 @@ export async function GET(
     console.error('Error in invoice GET route:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
-}
+};
 
 // PUT /api/invoices/[id] - Update an invoice
-export async function PUT(
-  req: NextRequest,
-  { params }: { params: { id: string } }
-) {
+export const PUT: RouteHandler = async (
+  req,
+  context
+) => {
   try {
     const clerkId = await getCurrentUser();
     
@@ -89,7 +90,7 @@ export async function PUT(
     }
     
     // Check if user has access to this invoice
-    const hasAccess = await checkUserAccess('invoices', params.id);
+    const hasAccess = await checkUserAccess('invoices', context.params.id);
     
     if (!hasAccess) {
       return NextResponse.json({ error: 'Not found' }, { status: 404 });
@@ -117,7 +118,7 @@ export async function PUT(
         notes: body.notes || '',
         updated_at: new Date().toISOString(),
       })
-      .eq('id', params.id)
+      .eq('id', context.params.id)
       .select()
       .single();
     
@@ -132,7 +133,7 @@ export async function PUT(
       const { error: deleteError } = await supabaseAdmin
         .from('invoice_items')
         .delete()
-        .eq('invoice_id', params.id);
+        .eq('invoice_id', context.params.id);
       
       if (deleteError) {
         console.error('Error deleting invoice items:', deleteError);
@@ -146,7 +147,7 @@ export async function PUT(
           const unitPrice = typeof item.unit_price === 'number' ? item.unit_price : 0;
           
           return {
-            invoice_id: params.id,
+            invoice_id: context.params.id,
             description: item.description || '',
             quantity: quantity,
             unit_price: unitPrice,
@@ -172,13 +173,13 @@ export async function PUT(
     console.error('Error in invoice PUT route:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
-}
+};
 
 // DELETE /api/invoices/[id] - Delete an invoice
-export async function DELETE(
-  req: NextRequest,
-  { params }: { params: { id: string } }
-) {
+export const DELETE: RouteHandler = async (
+  req,
+  context
+) => {
   try {
     const clerkId = await getCurrentUser();
     
@@ -187,7 +188,7 @@ export async function DELETE(
     }
     
     // Check if user has access to this invoice
-    const hasAccess = await checkUserAccess('invoices', params.id);
+    const hasAccess = await checkUserAccess('invoices', context.params.id);
     
     if (!hasAccess) {
       return NextResponse.json({ error: 'Not found' }, { status: 404 });
@@ -197,7 +198,7 @@ export async function DELETE(
     const { error: deleteError } = await supabaseAdmin
       .from('invoices')
       .delete()
-      .eq('id', params.id);
+      .eq('id', context.params.id);
     
     if (deleteError) {
       console.error('Error deleting invoice:', deleteError);
@@ -209,4 +210,4 @@ export async function DELETE(
     console.error('Error in invoice DELETE route:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
-} 
+}; 

@@ -1,13 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getCurrentUser, getCurrentUserData } from '@/lib/auth';
 import { supabaseAdmin } from '@/lib/supabase/server';
+import { RouteHandler } from '@/types/next';
 
 // Force a fresh build on Vercel
 // GET /api/contacts/[id] - Get a specific contact
-export async function GET(
-  req: NextRequest,
-  { params }: { params: { id: string } }
-) {
+export const GET: RouteHandler = async (
+  req,
+  context
+) => {
   try {
     const clerkId = await getCurrentUser();
     
@@ -24,7 +25,7 @@ export async function GET(
     const { data, error } = await supabaseAdmin
       .from('contacts')
       .select('*')
-      .eq('id', params.id)
+      .eq('id', context.params.id)
       .eq('user_id', userData.id)
       .single();
     
@@ -42,13 +43,13 @@ export async function GET(
     console.error('Error in contact GET route:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
-}
+};
 
 // PATCH /api/contacts/[id] - Update a specific contact
-export async function PATCH(
-  req: NextRequest,
-  { params }: { params: { id: string } }
-) {
+export const PATCH: RouteHandler = async (
+  req,
+  context
+) => {
   try {
     const clerkId = await getCurrentUser();
     
@@ -73,7 +74,7 @@ export async function PATCH(
     const { data: existingContact, error: fetchError } = await supabaseAdmin
       .from('contacts')
       .select('id')
-      .eq('id', params.id)
+      .eq('id', context.params.id)
       .eq('user_id', userData.id)
       .single();
     
@@ -95,7 +96,7 @@ export async function PATCH(
         status: body.status || 'active',
         updated_at: new Date().toISOString(),
       })
-      .eq('id', params.id)
+      .eq('id', context.params.id)
       .eq('user_id', userData.id)
       .select()
       .single();
@@ -110,13 +111,13 @@ export async function PATCH(
     console.error('Error in contact PATCH route:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
-}
+};
 
 // PUT /api/contacts/[id] - Update a specific contact (alias for PATCH)
-export async function PUT(
-  req: NextRequest,
-  { params }: { params: { id: string } }
-) {
+export const PUT: RouteHandler = async (
+  req,
+  context
+) => {
   try {
     const clerkId = await getCurrentUser();
     
@@ -141,7 +142,7 @@ export async function PUT(
     const { data: existingContact, error: fetchError } = await supabaseAdmin
       .from('contacts')
       .select('id')
-      .eq('id', params.id)
+      .eq('id', context.params.id)
       .eq('user_id', userData.id)
       .single();
     
@@ -163,7 +164,7 @@ export async function PUT(
         status: body.status || 'active',
         updated_at: new Date().toISOString(),
       })
-      .eq('id', params.id)
+      .eq('id', context.params.id)
       .eq('user_id', userData.id)
       .select()
       .single();
@@ -178,13 +179,13 @@ export async function PUT(
     console.error('Error in contact PUT route:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
-}
+};
 
 // DELETE /api/contacts/[id] - Delete a specific contact
-export async function DELETE(
-  req: NextRequest,
-  { params }: { params: { id: string } }
-) {
+export const DELETE: RouteHandler = async (
+  req,
+  context
+) => {
   try {
     const clerkId = await getCurrentUser();
     
@@ -202,7 +203,7 @@ export async function DELETE(
     const { data: existingContact, error: fetchError } = await supabaseAdmin
       .from('contacts')
       .select('id')
-      .eq('id', params.id)
+      .eq('id', context.params.id)
       .eq('user_id', userData.id)
       .single();
     
@@ -214,7 +215,7 @@ export async function DELETE(
     const { error } = await supabaseAdmin
       .from('contacts')
       .delete()
-      .eq('id', params.id)
+      .eq('id', context.params.id)
       .eq('user_id', userData.id);
     
     if (error) {
@@ -227,4 +228,4 @@ export async function DELETE(
     console.error('Error in contact DELETE route:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
-} 
+}; 
