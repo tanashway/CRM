@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getCurrentUser, getCurrentUserData } from '@/lib/auth';
 import { supabaseAdmin } from '@/lib/supabase/server';
 
+// Force a fresh build on Vercel
 // GET /api/contacts/[id] - Get a specific contact
 export async function GET(
   req: NextRequest,
