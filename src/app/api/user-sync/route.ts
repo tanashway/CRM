@@ -13,155 +13,136 @@ interface EmailAddress {
 
 // This endpoint handles Clerk webhooks to sync user data to Supabase
 export async function POST(req: NextRequest) {
-  // Verify the webhook signature
-  const headersList = headers();
-  const svixId = headersList.get('svix-id');
-  const svixTimestamp = headersList.get('svix-timestamp');
-  const svixSignature = headersList.get('svix-signature');
-  
-  // If there's no signature, this might be a manual sync request
-  const isManualSync = !svixId && !svixTimestamp && !svixSignature;
-  
-  if (!isManualSync) {
-    // Verify the webhook signature for automated requests
-    if (!svixId || !svixTimestamp || !svixSignature) {
-      console.error('Missing Svix headers');
-      return NextResponse.json({ error: 'Missing Svix headers' }, { status: 400 });
-    }
+  try {
+    // Verify the webhook signature
+    const headersList = await headers();
+    const svixId = headersList.get('svix-id') || null;
+    const svixTimestamp = headersList.get('svix-timestamp') || null;
+    const svixSignature = headersList.get('svix-signature') || null;
     
-    // Get the Clerk webhook secret from environment variables
-    const WEBHOOK_SECRET = process.env.CLERK_WEBHOOK_SECRET;
+    // If there's no signature, this might be a manual sync request
+    const isManualSync = !svixId && !svixTimestamp && !svixSignature;
     
-    if (!WEBHOOK_SECRET) {
-      console.error('Missing CLERK_WEBHOOK_SECRET');
-      return NextResponse.json({ error: 'Server misconfigured' }, { status: 500 });
-    }
+    let userId: string | null | undefined = null;
+    let eventType: string | null = null;
+    let userData: any = null;
     
-    // Create a new Svix instance with the webhook secret
-    const wh = new Webhook(WEBHOOK_SECRET);
-    let evt: WebhookEvent;
-    
-    try {
-      // Verify the webhook payload
-      const payload = await req.text();
-      evt = wh.verify(payload, {
-        'svix-id': svixId,
-        'svix-timestamp': svixTimestamp,
-        'svix-signature': svixSignature,
-      }) as WebhookEvent;
-    } catch (err) {
-      console.error('Error verifying webhook:', err);
-      return NextResponse.json({ error: 'Invalid signature' }, { status: 400 });
-    }
-    
-    // Handle different webhook events
-    const eventType = evt.type;
-    
-    if (eventType === 'user.created' || eventType === 'user.updated') {
-      const { id, email_addresses, first_name, last_name } = evt.data;
-      
-      // Get the primary email
-      const primaryEmail = email_addresses?.find(email => email.id === evt.data.primary_email_address_id)?.email_address;
-      
-      // Sync user to Supabase
-      return await syncUserToSupabase(id, primaryEmail, first_name, last_name);
-    } else if (eventType === 'user.deleted') {
-      // Handle user deletion if needed
-      const { id } = evt.data;
-      
-      // Delete user from Supabase
-      const { error } = await supabaseAdmin
-        .from('users')
-        .delete()
-        .eq('clerk_id', id);
-      
-      if (error) {
-        console.error('Error deleting user from Supabase:', error);
-        return NextResponse.json({ error: 'Failed to delete user' }, { status: 500 });
+    if (!isManualSync) {
+      // Verify the webhook signature for automated requests
+      if (!svixId || !svixTimestamp || !svixSignature) {
+        console.error('Missing Svix headers');
+        return NextResponse.json({ error: 'Missing Svix headers' }, { status: 400 });
       }
       
-      return NextResponse.json({ message: 'User deleted successfully' });
+      // Get the webhook secret from environment variables
+      const webhookSecret = process.env.CLERK_WEBHOOK_SECRET;
+      
+      if (!webhookSecret) {
+        console.error('Missing Clerk webhook secret');
+        return NextResponse.json({ error: 'Missing webhook secret' }, { status: 500 });
+      }
+      
+      // Create a new Svix webhook instance with the secret
+      const wh = new Webhook(webhookSecret);
+      
+      // Get the raw body from the request
+      const body = await req.text();
+      
+      // Verify the webhook payload
+      let evt: WebhookEvent;
+      
+      try {
+        evt = wh.verify(body, {
+          'svix-id': svixId,
+          'svix-timestamp': svixTimestamp,
+          'svix-signature': svixSignature,
+        }) as WebhookEvent;
+      } catch (err) {
+        console.error('Error verifying webhook:', err);
+        return NextResponse.json({ error: 'Error verifying webhook' }, { status: 400 });
+      }
+      
+      // Extract the event type and data
+      eventType = evt.type;
+      
+      // Process based on event type
+      if (eventType === 'user.created' || eventType === 'user.updated') {
+        userId = evt.data.id;
+        userData = evt.data;
+      } else {
+        // We only care about user events for syncing
+        return NextResponse.json({ message: 'Ignored event type' }, { status: 200 });
+      }
+    } else {
+      // This is a manual sync request, get the user ID from the request body
+      const body = await req.json();
+      userId = body.userId;
+      
+      if (!userId) {
+        return NextResponse.json({ error: 'Missing user ID' }, { status: 400 });
+      }
     }
     
-    // Return a 200 response for other event types
-    return NextResponse.json({ message: 'Webhook received' });
-  } else {
-    // Handle manual sync request
-    try {
-      const body = await req.json();
-      const { userId } = body;
-      
+    // Get user data from Clerk if not already provided by webhook
+    if (!userData) {
+      const clerk = await clerkClient();
+      // Ensure userId is not null before passing to getUser
       if (!userId) {
         return NextResponse.json({ error: 'User ID is required' }, { status: 400 });
       }
+      userData = await clerk.users.getUser(userId);
       
-      // Get user data from Clerk
-      const user = await clerkClient.users.getUser(userId);
-      
-      if (!user) {
+      if (!userData) {
         return NextResponse.json({ error: 'User not found in Clerk' }, { status: 404 });
       }
-      
-      // Get the primary email
-      const primaryEmail = user.emailAddresses.find((email: EmailAddress) => email.id === user.primaryEmailAddressId)?.emailAddress;
-      
-      // Sync user to Supabase
-      return await syncUserToSupabase(user.id, primaryEmail, user.firstName, user.lastName);
-    } catch (error) {
-      console.error('Error in manual sync:', error);
-      return NextResponse.json({ error: 'Failed to sync user' }, { status: 500 });
     }
-  }
-}
-
-// Helper function to sync user data to Supabase
-async function syncUserToSupabase(
-  clerkId: string,
-  email?: string | null,
-  firstName?: string | null,
-  lastName?: string | null
-) {
-  try {
+    
+    // Get the primary email
+    const primaryEmail = userData.emailAddresses?.find(
+      (email: EmailAddress) => email.id === userData.primaryEmailAddressId
+    )?.emailAddress || null; // Ensure null instead of undefined
+    
     // Check if user already exists in Supabase
     const { data: existingUser, error: fetchError } = await supabaseAdmin
       .from('users')
       .select('*')
-      .eq('clerk_id', clerkId)
+      .eq('clerk_id', userId as string) // Cast to string since we've verified it's not null
       .single();
     
-    if (fetchError && fetchError.code !== 'PGRST116') { // PGRST116 is the error code for "no rows returned"
-      console.error('Error fetching user from Supabase:', fetchError);
-      return NextResponse.json({ error: 'Failed to fetch user' }, { status: 500 });
-    }
-    
-    const userData = {
-      clerk_id: clerkId,
-      email: email || null,
-      first_name: firstName || null,
-      last_name: lastName || null,
+    const userDataToSync = {
+      clerk_id: userId as string, // Cast to string since we've verified it's not null
+      email: primaryEmail,
+      first_name: userData.firstName || null,
+      last_name: userData.lastName || null,
       updated_at: new Date().toISOString(),
     };
     
     let result;
     
-    if (existingUser) {
-      // Update existing user
-      result = await supabaseAdmin
-        .from('users')
-        .update(userData)
-        .eq('clerk_id', clerkId)
-        .select()
-        .single();
-    } else {
-      // Create new user
+    if (fetchError && fetchError.code === 'PGRST116') {
+      // User doesn't exist, create new user
+      console.log('Creating new user in Supabase:', userId);
       result = await supabaseAdmin
         .from('users')
         .insert({
-          ...userData,
+          ...userDataToSync,
           created_at: new Date().toISOString(),
         })
         .select()
         .single();
+    } else if (!fetchError) {
+      // User exists, update user
+      console.log('Updating existing user in Supabase:', userId);
+      result = await supabaseAdmin
+        .from('users')
+        .update(userDataToSync)
+        .eq('clerk_id', userId)
+        .select()
+        .single();
+    } else {
+      // Other error occurred
+      console.error('Error fetching user from Supabase:', fetchError);
+      return NextResponse.json({ error: 'Failed to fetch user' }, { status: 500 });
     }
     
     if (result.error) {
@@ -172,9 +153,10 @@ async function syncUserToSupabase(
     return NextResponse.json({
       message: existingUser ? 'User updated successfully' : 'User created successfully',
       user: result.data,
+      event: eventType,
     });
   } catch (error) {
-    console.error('Error in syncUserToSupabase:', error);
+    console.error('Error in user-sync webhook:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 } 

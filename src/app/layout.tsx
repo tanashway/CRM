@@ -3,6 +3,7 @@ import type { Metadata } from 'next';
 import { ClerkProvider } from '@clerk/nextjs';
 import { Toaster } from '@/components/ui/toaster';
 import { QuickFixButton } from '@/components/quick-fix-button';
+import { UserSync } from '@/components/UserSync';
 import { Geist, Geist_Mono } from 'next/font/google';
 
 const geistSans = Geist({
@@ -32,6 +33,7 @@ export default function RootLayout({
           {children}
           <Toaster />
           <QuickFixButton />
+          <UserSync />
         </body>
       </html>
     </ClerkProvider>

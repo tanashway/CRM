@@ -24,7 +24,7 @@ export const createClient = (cookieStore: ReturnType<typeof cookies>) => {
         async remove(name: string, options: { path: string }) {
           try {
             const cookiesStore = await cookieStore;
-            cookiesStore.delete(name, { path: options.path });
+            cookiesStore.delete(name);
           } catch {
             // The `remove` method was called from a Server Component.
             // This can be ignored if you have middleware refreshing

@@ -19,7 +19,8 @@ export async function POST() {
     }
     
     // Get user data from Clerk
-    const user = await clerkClient.users.getUser(clerkId);
+    const clerk = await clerkClient();
+    const user = await clerk.users.getUser(clerkId);
     
     if (!user) {
       return NextResponse.json({ error: 'User not found in Clerk' }, { status: 404 });
