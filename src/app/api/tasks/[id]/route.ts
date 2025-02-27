@@ -5,7 +5,7 @@ import { supabaseAdmin } from '@/lib/supabase/server';
 // GET /api/tasks/[id] - Get a specific task
 export async function GET(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  context: { params: { id: string } }
 ) {
   try {
     const clerkId = await getCurrentUser();
@@ -14,7 +14,7 @@ export async function GET(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
     
-    const hasAccess = await checkUserAccess('tasks', params.id);
+    const hasAccess = await checkUserAccess('tasks', context.params.id);
     
     if (!hasAccess) {
       return NextResponse.json({ error: 'Not found' }, { status: 404 });
@@ -33,7 +33,7 @@ export async function GET(
           company
         )
       `)
-      .eq('id', params.id)
+      .eq('id', context.params.id)
       .single();
     
     if (error) {
@@ -51,7 +51,7 @@ export async function GET(
 // PUT /api/tasks/[id] - Update a specific task
 export async function PUT(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  context: { params: { id: string } }
 ) {
   try {
     const clerkId = await getCurrentUser();
@@ -60,7 +60,7 @@ export async function PUT(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
     
-    const hasAccess = await checkUserAccess('tasks', params.id);
+    const hasAccess = await checkUserAccess('tasks', context.params.id);
     
     if (!hasAccess) {
       return NextResponse.json({ error: 'Not found' }, { status: 404 });
@@ -78,7 +78,7 @@ export async function PUT(
       const { data: userData, error: userError } = await supabaseAdmin
         .from('tasks')
         .select('user_id')
-        .eq('id', params.id)
+        .eq('id', context.params.id)
         .single();
       
       if (userError || !userData) {
@@ -108,7 +108,7 @@ export async function PUT(
         priority: body.priority || 'medium',
         updated_at: new Date().toISOString(),
       })
-      .eq('id', params.id)
+      .eq('id', context.params.id)
       .select()
       .single();
     
@@ -127,7 +127,7 @@ export async function PUT(
 // DELETE /api/tasks/[id] - Delete a specific task
 export async function DELETE(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  context: { params: { id: string } }
 ) {
   try {
     const clerkId = await getCurrentUser();
@@ -136,7 +136,7 @@ export async function DELETE(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
     
-    const hasAccess = await checkUserAccess('tasks', params.id);
+    const hasAccess = await checkUserAccess('tasks', context.params.id);
     
     if (!hasAccess) {
       return NextResponse.json({ error: 'Not found' }, { status: 404 });
@@ -145,7 +145,7 @@ export async function DELETE(
     const { error } = await supabaseAdmin
       .from('tasks')
       .delete()
-      .eq('id', params.id);
+      .eq('id', context.params.id);
     
     if (error) {
       console.error('Error deleting task:', error);

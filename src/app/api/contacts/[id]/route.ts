@@ -5,7 +5,7 @@ import { supabaseAdmin } from '@/lib/supabase/server';
 // GET /api/contacts/[id] - Get a specific contact
 export async function GET(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  context: { params: { id: string } }
 ) {
   try {
     const clerkId = await getCurrentUser();
@@ -23,7 +23,7 @@ export async function GET(
     const { data, error } = await supabaseAdmin
       .from('contacts')
       .select('*')
-      .eq('id', params.id)
+      .eq('id', context.params.id)
       .eq('user_id', userData.id)
       .single();
     
@@ -46,7 +46,7 @@ export async function GET(
 // PATCH /api/contacts/[id] - Update a specific contact
 export async function PATCH(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  context: { params: { id: string } }
 ) {
   try {
     const clerkId = await getCurrentUser();
@@ -72,7 +72,7 @@ export async function PATCH(
     const { data: existingContact, error: fetchError } = await supabaseAdmin
       .from('contacts')
       .select('id')
-      .eq('id', params.id)
+      .eq('id', context.params.id)
       .eq('user_id', userData.id)
       .single();
     
@@ -94,7 +94,7 @@ export async function PATCH(
         status: body.status || 'active',
         updated_at: new Date().toISOString(),
       })
-      .eq('id', params.id)
+      .eq('id', context.params.id)
       .eq('user_id', userData.id)
       .select()
       .single();
@@ -114,7 +114,7 @@ export async function PATCH(
 // PUT /api/contacts/[id] - Update a specific contact (alias for PATCH)
 export async function PUT(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  context: { params: { id: string } }
 ) {
   try {
     const clerkId = await getCurrentUser();
@@ -140,7 +140,7 @@ export async function PUT(
     const { data: existingContact, error: fetchError } = await supabaseAdmin
       .from('contacts')
       .select('id')
-      .eq('id', params.id)
+      .eq('id', context.params.id)
       .eq('user_id', userData.id)
       .single();
     
@@ -162,7 +162,7 @@ export async function PUT(
         status: body.status || 'active',
         updated_at: new Date().toISOString(),
       })
-      .eq('id', params.id)
+      .eq('id', context.params.id)
       .eq('user_id', userData.id)
       .select()
       .single();
@@ -182,7 +182,7 @@ export async function PUT(
 // DELETE /api/contacts/[id] - Delete a specific contact
 export async function DELETE(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  context: { params: { id: string } }
 ) {
   try {
     const clerkId = await getCurrentUser();
@@ -201,7 +201,7 @@ export async function DELETE(
     const { data: existingContact, error: fetchError } = await supabaseAdmin
       .from('contacts')
       .select('id')
-      .eq('id', params.id)
+      .eq('id', context.params.id)
       .eq('user_id', userData.id)
       .single();
     
@@ -213,7 +213,7 @@ export async function DELETE(
     const { error } = await supabaseAdmin
       .from('contacts')
       .delete()
-      .eq('id', params.id)
+      .eq('id', context.params.id)
       .eq('user_id', userData.id);
     
     if (error) {
